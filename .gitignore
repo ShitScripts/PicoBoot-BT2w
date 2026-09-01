@@ -23,6 +23,7 @@ picoboot.hex
 picoboot.pio.h
 gekkoboot.dol
 payload.dol
-src/version.hconfigure.log
+src/version.h
+configure.log
 build.log
 
