@@ -32,9 +32,9 @@ PicoBoot is a long awaited IPL replacement modchip for the Nintendo GameCube. It
 > Building your own? See [Building from source](#building-from-source) below.
 
 ### 2. Wiring — booting (geckoboot/IPL injection)
-The boot wiring uses the **up-to-date PicoBoot wiring** (v0.4 and newer), soldering into the GameCube's memory-card/controller area:
+The boot wiring uses the **up-to-date PicoBoot wiring**, soldering into the GameCube's memory-card/controller area:
 
-![Up-to-date PicoBoot wiring](assets/Wiring%20diagram%20-%20v0.4.jpg)
+![Up-to-date PicoBoot wiring](assets/Wiring%20diagram%20-%20up-to-date.jpg)
 
 The IPL injection uses the standard PicoBoot points: **GP4, GP5, GP6**, plus **3V3** and **GND**. (The optional 5V `VSYS` power option shown on the diagram is for consoles that haven't been recapped.)
 
@@ -43,7 +43,14 @@ The **Bluetooth pin layout is the same as shown in the Bluetooth wiring diagram*
 
 ![Bluetooth wiring](assets/Wiring%20diagram%20-%20Bluetooth.png)
 
-The Bluetooth circuitry taps the **same data points as the controller ports** (the pads labelled **P1, P2, P3, P4**), connecting to the Pico's Bluetooth GPIOs (controller/joybus pins **22, 26, 27, 28**). This lets a paired wireless gamepad work as a wired GameCube controller across all four player slots.
+The Bluetooth circuitry taps the **same data points as the controller ports** (the pads labelled **P1, P2, P3, P4**), connecting to the Pico's Bluetooth GPIOs. This lets a paired wireless gamepad work as a wired GameCube controller across all four player slots.
+
+| Pad | GPIO |
+|-----|------|
+| P1 (Controller Port 1) | **22** |
+| P2 (Controller Port 2) | **26** |
+| P3 (Controller Port 3) | **27** |
+| P4 (Controller Port 4) | **28** |
 
 ### 4. Power on and play
 1. Pair your Bluetooth gamepad as you normally would for Bluepad32.
