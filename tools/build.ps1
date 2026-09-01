@@ -51,7 +51,10 @@ Invoke-Step "Generating payload UF2 file" {
 }
 
 Invoke-Step "Generating build files (board=$board)" {
-    & $cmake.Source -B "build\$board" -DCMAKE_BUILD_TYPE=$buildType "-DPICO_BOARD=$board" -S .
+    # NOTE: the -DCMAKE_BUILD_TYPE argument MUST be quoted so PowerShell expands
+    # $buildType. As a bare argument it is passed through literally ("$buildType"),
+    # which corrupts the generated ninja rules and breaks the build.
+    & $cmake.Source -B "build\$board" -G Ninja "-DCMAKE_BUILD_TYPE=$buildType" "-DPICO_BOARD=$board" -S .
 }
 
 Invoke-Step "Building" {

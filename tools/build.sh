@@ -40,7 +40,7 @@ fi
 tools/process_ipl.py dist/payload_pico2.uf2 payload.dol rp2350
 
 echo -e "\n🔨 ${YELLOW}Generating build files (board: ${board})...${NC}"
-cmake -B "build/${board}" -DCMAKE_BUILD_TYPE="${build_type}" -DPICO_BOARD="${board}" -S .
+cmake -G Ninja -B "build/${board}" -DCMAKE_BUILD_TYPE="${build_type}" -DPICO_BOARD="${board}" -S .
 
 echo -e "\n🔨 ${YELLOW}Building...${NC}"
 cmake --build "build/${board}" --config "${build_type}"
