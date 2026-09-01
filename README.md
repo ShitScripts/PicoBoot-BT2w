@@ -1,49 +1,83 @@
 <img src="/assets/PicoBoot.png" alt="PicoBoot" align="left"/>
 
 
-# PicoBoot
+# PicoBoot BT 2W
 
-This is long awaited IPL replacement modchip for Nintendo GameCube.<br />
-It's open source, cheap and easy to install.
+PicoBoot is a long awaited IPL replacement modchip for the Nintendo GameCube. It's open source, cheap and easy to install.
 
-Join Discord Server to get support and discuss new features:
+**PicoBoot BT 2W** is a port of PicoBoot for the **Raspberry Pi Pico 2 W** that also adds built-in Bluetooth (Bluepad32), so a wireless controller can be used as a GameCube controller — no extra hardware or receiver dongle needed.
 
 [![](https://dcbadge.limes.pink/api/server/fEhyWRPCmb)](https://click.webhdx.dev/discord)
 
 ## Features
 * open source
-* uses $4 Raspberry Pi Pico board
-* very easy installation, only 5 wires to solder or a flex cable
-* upgradable via USB cable, without any drivers and programs
-* automatically boots any homebrew app of your choice
-* similar experience to ODEs like FlippyDrive or GC Loader
+* uses a $4 Raspberry Pi Pico 2 W board
+* IPL injection modchip — boots geckoboot/Swiss and any homebrew of your choice
+* built-in Bluetooth via Bluepad32 — pair a wireless gamepad and use it as a native GameCube controller
+* upgradable via USB cable, without any drivers or programs
+* very easy installation, only a few wires to solder
+
+## Requirements
+* A Raspberry Pi **Pico 2 W**
+* A GameCube (DOL-001 or DOL-101)
+* A few short jumper wires and basic soldering skills
 
 ## Installation
 
-> [!NOTE]
-> Prior to PicoBoot v0.4, wiring was slightly different and most videos available online cover the old wiring method. You no longer need to bridge pins GP6 and GP7. If you are making fresh PicoBoot installation please follow new wiring diagram. If you are updating from older firmware, you don't have to change the wiring at all as new firmware is backwards compatible.
+### 1. Flash the firmware
+1. Put your Pico 2 W into bootloader mode (hold the **BOOTSEL** button while plugging it into USB).
+2. A USB drive named `RPI-RP2` appears.
+3. Copy the merged firmware `dist/picoboot_bt2w_full.uf2` onto it. The Pico reboots automatically.
 
-> [!TIP]
-> Documentation covering [Installation](https://support.webhdx.dev/gc/picoboot/installation-guide) and [Troubleshooting](https://support.webhdx.dev/gc/picoboot/troubleshooting) is hosted at [support.webhdx.dev](https://support.webhdx.dev/gc/picoboot).
+> Building your own? See [Building from source](#building-from-source) below.
 
-![Wiring diagram](assets/Wiring%20diagram.jpg)
+### 2. Wiring — booting (geckoboot/IPL injection)
+The boot wiring uses the **up-to-date PicoBoot wiring** (v0.4 and newer), soldering into the GameCube's memory-card/controller area:
 
-## Support the project
+![Up-to-date PicoBoot wiring](assets/Wiring%20diagram%20-%20v0.4.jpg)
 
-This project is free and available for everyone. If you want to support it anyway, consider using [:heart: Sponsor](https://github.com/sponsors/webhdx) button.
+The IPL injection uses the standard PicoBoot points: **GP4, GP5, GP6**, plus **3V3** and **GND**. (The optional 5V `VSYS` power option shown on the diagram is for consoles that haven't been recapped.)
 
-## Hall of Fame
+### 3. Wiring — Bluetooth
+The **Bluetooth pin layout is the same as shown in the Bluetooth wiring diagram**:
 
-I'd like to thank people who helped making PicoBoot possible:
-* #gc-forever crew: [Extrems](https://github.com/Extrems), [novenary](https://github.com/9ary), [emu_kidid](https://github.com/emukidid) and others 
-* [tmbinc](https://github.com/tmbinc) - he started it all 🙏 
-* Steven Taffs aka happy_bunny - his Shuriken Attack modchip and documentation heavily inspired PicoBoot
-* beta testers: [seewood](https://github.com/seewood), [MethodOrMadness](https://github.com/MethodOrMadness), [renanbianchi](https://github.com/renanbianchi)
-* content creators: [MachoNachoProductions](https://www.youtube.com/c/MachoNachoProductions), [RockerGaming](https://www.youtube.com/c/RockerGaming), [ModzvilleUSA!](https://www.youtube.com/c/ModzvilleUSA)
-* people who sponsored this project
-* every PicoBoot enjoyer - it's all about you after all 😉
+![Bluetooth wiring](assets/Wiring%20diagram%20-%20Bluetooth.png)
+
+The Bluetooth circuitry taps the **same data points as the controller ports** (the pads labelled **P1, P2, P3, P4**), connecting to the Pico's Bluetooth GPIOs (controller/joybus pins **22, 26, 27, 28**). This lets a paired wireless gamepad work as a wired GameCube controller across all four player slots.
+
+### 4. Power on and play
+1. Pair your Bluetooth gamepad as you normally would for Bluepad32.
+2. Power on the GameCube. PicoBoot injects geckoboot, and the wireless controller emulates the GameCube controller.
+
+## Wiring summary
+* **Booting (geckoboot/IPL injection):** uses the **up-to-date PicoBoot wiring** (from picoboot).
+* **Bluetooth:** uses the **same Bluetooth pin layout** as the Bluetooth diagram (only the Bluetooth GPIOs come from the picoboot-bt layout).
+* **Pins:**
+  * IPL/injection: GPIO **4, 5, 6** (CS, CLK, DI) plus 3V3 and GND
+  * Bluetooth/controller: GPIO **22, 26, 27, 28** (P1–P4)
+
+## Building from source
+
+### Windows
+```
+powershell -ExecutionPolicy Bypass -File tools\build.ps1
+```
+Requires `cmake`, Ninja, an ARM toolchain, Python and the Raspberry Pi Pico SDK. Set `PICO_SDK_PATH` to your Pico SDK checkout (e.g. `C:\Users\you\pico-sdk`).
+
+The script:
+1. Downloads gekkoboot (`tools/get_gekkoboot.ps1`) if no `payload.dol` is present.
+2. Processes the DOL into a payload UF2.
+3. Builds the combined firmware.
+4. Merges firmware + payload into `dist/picoboot_bt2w_full.uf2`.
+
+### Linux / macOS
+```
+tools/build.sh
+```
 
 ## Acknowledgements
+* [webhdx/PicoBoot](https://github.com/webhdx/PicoBoot) — the original IPL injection PicoBoot.
+* [ricardoquesada/bluepad32](https://github.com/ricardoquesada/bluepad32) — the Bluetooth/gamepad stack.
+* [redolution](https://github.com/redolution) — gekkoboot/iplboot.
 
-This project uses GPL-2.0 licensed code from:
- * https://github.com/redolution/gekkoboot
+This project uses GPL-2.0 licensed code from the projects above.
