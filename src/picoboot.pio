@@ -1,0 +1,54 @@
+ ; Copyright (c) 2025 Maciej Kobus
+ ;
+ ; SPDX-License-Identifier: GPL-2.0-only
+
+.define PUBLIC PIN_CLK     5    ; EXI clock signal
+.define PUBLIC PIN_CS      4    ; U10 chip select
+.define PUBLIC PIN_DI      6    ; MISO data output
+
+.program on_transfer
+
+start:
+    wait 1 gpio PIN_CS          ; Wait for CS to go HIGH
+    wait 0 gpio PIN_CS          ; Wait for CS to go LOW
+    jmp x-- start
+    irq set 0                   ; Set IRQ flag to start injecting payload
+
+next_transfer:
+.wrap_target
+    wait 1 gpio PIN_CS          ; Wait for CS to go HIGH
+    wait 0 gpio PIN_CS          ; Wait for CS to go LOW
+    irq set 0                   ; Let other SM inject the payload
+    wait 1 gpio PIN_CLK         ; Hold until CLK goes HIGH
+.wrap
+
+.program clocked_output
+
+start:
+    set x, 31                   ; x - 32 bits we need to skip (address)
+    wait 1 irq 0                ; Hold until SM0 tells us to start injecting
+
+wait_bit:
+    wait 0 gpio PIN_CLK         ; Seems to be slighty faster than "wait 0 pin 1"?
+    wait 1 gpio PIN_CLK
+    jmp x-- wait_bit            ; Skip past address bytes
+    mov x, y                    ; Copy y value to x, it represents number of bits in the transfer
+    set pindirs 1               ; Set data line as output
+
+    out pins, 1                 ; Output single IPL bit
+    jmp x-- on_rising_edge      ; Decrement x
+
+on_rising_edge:
+    wait 0 gpio PIN_CLK         ; Sample until rising edge on CLK line
+    wait 1 gpio PIN_CLK
+
+write_bit:
+    out pins, 1                 ; Output single IPL bit
+    jmp x-- on_rising_edge      ; Jump back to next clock pulse wait routine if there is more data to inject
+
+    jmp !osre start             ; If there is more data in OSR, go back to start routine and wait for another transfer
+
+    set pindirs 0               ; Leave data line floating so RTC-DOL can take over and load fonts etc.
+
+disable_chip:
+    jmp disable_chip            ; Stay in the loop forever until power cycle

@@ -1,0 +1,26 @@
+.idea
+.vscode
+_deps
+.DS_Store
+
+# Build environment
+build/
+dist/
+CMakeFiles/
+elf2uf2/
+generated/
+pico-sdk/
+pioasm/
+cmake_install.cmake
+CMakeCache.txt
+Makefile
+picoboot.bin
+picoboot.dis
+picoboot.elf
+picoboot.elf.map
+picoboot.hex
+*.uf2
+picoboot.pio.h
+gekkoboot.dol
+payload.dol
+src/version.h

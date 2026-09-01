@@ -1,0 +1,4 @@
+{
+    "name": "PicoBoot build environment",
+    "image": "ghcr.io/webhdx/picoboot:latest"
+}
