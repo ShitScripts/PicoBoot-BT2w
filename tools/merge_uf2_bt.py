@@ -91,7 +91,7 @@ def write_uf2(blocks, name):
 
 
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print(f"Usage: {sys.argv[0]} <firmware.uf2> <payload.uf2> <output.uf2>")
         return 1
 

@@ -11,7 +11,10 @@
 #   powershell -ExecutionPolicy Bypass -File tools\build.ps1
 # -----------------------------------------------------------------------
 
-$ErrorActionPreference = "Stop"
+# NOTE: do NOT use "Stop" here - PowerShell 5.1 treats native-command stderr
+# (which cmake/git normally emit for progress) as a terminating error. Each
+# native call below is guarded by an explicit $LASTEXITCODE check instead.
+$ErrorActionPreference = "Continue"
 
 $board = "pico2_w"
 $buildType = "RelWithDebInfo"
@@ -32,6 +35,9 @@ function Invoke-Step {
     Write-Host ""
     Write-Host "### $Title" -ForegroundColor Cyan
     & $Body
+    if ($LASTEXITCODE -ne 0) {
+        throw "'$Title' failed with exit code $LASTEXITCODE"
+    }
 }
 
 if (-not (Test-Path "payload.dol")) {
@@ -42,17 +48,14 @@ New-Item -ItemType Directory -Force -Path "dist" | Out-Null
 
 Invoke-Step "Generating payload UF2 file" {
     & $python.Source "tools\process_ipl.py" "dist\payload_pico2.uf2" "payload.dol" "rp2350"
-    if (-not $?) { throw "process_ipl.py failed" }
 }
 
 Invoke-Step "Generating build files (board=$board)" {
     & $cmake.Source -B "build\$board" -DCMAKE_BUILD_TYPE=$buildType "-DPICO_BOARD=$board" -S .
-    if (-not $?) { throw "cmake configure failed" }
 }
 
 Invoke-Step "Building" {
     & $cmake.Source --build "build\$board" --config $buildType
-    if (-not $?) { throw "cmake build failed" }
 }
 
 # Convert the raw binary to a bare UF2 carrying the rp2350-arm-s family ID.
@@ -70,7 +73,6 @@ if (-not $picotool) { throw "picotool not found (needed to convert firmware to r
 
 Invoke-Step "Converting firmware to UF2 (family rp2350-arm-s)" {
     & $picotool.ToString() uf2 convert "build\$board\dist\picoboot.bin" "build\$board\picoboot.uf2" --family rp2350-arm-s
-    if (-not $?) { throw "picotool failed" }
 }
 
 Invoke-Step "Merging firmware + payload" {
@@ -78,7 +80,6 @@ Invoke-Step "Merging firmware + payload" {
         "build\$board\picoboot.uf2" `
         "dist\payload_pico2.uf2" `
         "dist\picoboot_bt2w_full.uf2"
-    if (-not $?) { throw "merge failed" }
 }
 
 Write-Host ""
