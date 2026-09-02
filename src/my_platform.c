@@ -68,11 +68,12 @@ static void my_platform_on_init_complete(void) {
     // Start scanning
     uni_bt_enable_new_connections_unsafe(true);
 
-    // Based on runtime condition, you can delete or list the stored BT keys.
-    if (1)
-        uni_bt_del_keys_unsafe();
-    else
-        uni_bt_list_keys_unsafe();
+    // Keep previously-paired controllers' link keys so they can
+    // auto-reconnect on power-up instead of requiring the user to
+    // re-pair from scratch every single boot. (Previously this
+    // unconditionally called uni_bt_del_keys_unsafe(), wiping all
+    // bonds every time.)
+    uni_bt_list_keys_unsafe();
 
     // Turn off LED once init is done.
     //cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
@@ -119,6 +120,8 @@ static void my_platform_on_device_disconnected(uni_hid_device_t* d) {
             core1playermsg.data = idx;
             core0_send_message_safe(&core1playermsg);
             _players[idx].connected = false;
+            _players[idx].led_set = false;
+            _players[idx].device_ptr = NULL;
         break;
 
         default:
@@ -138,7 +141,13 @@ void _my_platform_process_rumble(uint8_t idx, bool rumble)
 {
     bool state = rumble;
     uni_hid_device_t *d = _players[idx].device_ptr;
-    if(!_players[idx].connected | d->report_parser.play_dual_rumble == NULL) return;
+
+    // Short-circuit (||) is required here: if the player isn't connected,
+    // 'd' may be NULL (never connected) or a dangling pointer to a device
+    // Bluepad32 has already freed/reused (just disconnected). The original
+    // bitwise '|' evaluated both sides unconditionally, dereferencing 'd'
+    // even when it was invalid.
+    if (!_players[idx].connected || d == NULL || d->report_parser.play_dual_rumble == NULL) return;
 
     if(state)
     d->report_parser.play_dual_rumble(d, 0, 32, 128, 40);

@@ -7,6 +7,7 @@ auto_init_mutex(intercore_core1_mutex);
 
 volatile intercore_msg_s _core0_queue[INTERCORE_QUEUE_LEN];
 volatile uint8_t _core0_write_idx = 0;
+volatile uint16_t _core0_last_msg = 0xFFFF; // sentinel: no message sent yet
 
 volatile intercore_msg_s _core1_queue[INTERCORE_QUEUE_LEN];
 volatile uint8_t _core1_write_idx = 0;
@@ -15,10 +16,15 @@ void core0_send_message_safe(intercore_msg_s *in)
 {
     mutex_enter_blocking(&intercore_core0_mutex);
 
-    // Ensure it's not a duplicate message
-    // to the last written
-    if(_core0_queue[_core0_write_idx].msg != in->msg)
+    // Ensure it's not a duplicate of the message we actually last sent.
+    // (Previously this compared against whatever stale data happened to
+    // be sitting in the slot about to be overwritten - up to 32 messages
+    // old - which could silently drop legitimate new messages, e.g. a
+    // CONNECT that happened to match leftover data from a prior CONNECT.)
+    if(_core0_last_msg != in->msg)
     {
+        _core0_last_msg = in->msg;
+
         // msg contains the ID and data
         _core0_queue[_core0_write_idx].msg = in->msg;
 
